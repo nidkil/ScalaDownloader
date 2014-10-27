@@ -9,4 +9,4 @@ On my quest to learn Scala and Akka I am going to implement a downloader. I will
 
 Ones completed I should have a pretty good understanding of Scala and Akka.
 
-I will start off with a global design and then start coding. 
+I will start off with a global design and then start coding.
