@@ -20,6 +20,8 @@ import com.nidkil.downloader.datatypes.RemoteFileInfo
 object Splitter {
 
   private val ratioMaxSize = 1024 * 1024 * 20 // 20 MB
+  
+  val CHUNK_FILE_EXT = ".chunk"
 
   def defaultStrategy(fileSize: Long): Int = 1024 * 1024 * 5 // 5 MB
 
@@ -59,7 +61,7 @@ class Splitter {
     val numOfChunks = if (r.fileSize % chunkSize > 0) (r.fileSize / chunkSize).toInt + 1 else (r.fileSize / chunkSize).toInt
 
     def addChunk(i: Int, startChunk: Long, endChunk: Long, length: Int) = {
-      val destFile = new File(workDir, f"$i%06d.chunk")
+      val destFile = new File(workDir, f"$i%06d$CHUNK_FILE_EXT")
       chunks += new Chunk(i, r.url, destFile, startChunk, length, append)
     }
 

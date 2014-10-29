@@ -14,6 +14,7 @@ trait ChunkDownload {
   
   def formattedId: String = f"$id%06d"
 
+  //TODO use case class variables
   def validateState(f: File, length: Long): State = {
     if (f.exists) {
       if (f.length == length) State.DOWNLOADED
