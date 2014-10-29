@@ -10,6 +10,11 @@ import java.io.IOException
 import org.apache.commons.io.IOUtils
 import java.io.File
 
+/**
+ * The merger handles the merging of chunks.
+ * 
+ * This is the default merger which uses standard Java io to merge the chunks.
+ */
 class DefaultMerger extends Merger {
 
   import Merger._
