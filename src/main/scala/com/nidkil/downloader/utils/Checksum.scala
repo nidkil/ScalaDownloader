@@ -4,6 +4,7 @@ import java.security.MessageDigest
 import java.io.FileInputStream
 import java.io.InputStream
 import java.io.File
+import org.apache.commons.io.IOUtils
 
 /**
  * Generates a checksum. This checksum is used to verify the integrity of the 
@@ -23,7 +24,7 @@ object Checksum {
   
   /** Calculate the checksum of a string with the specified algorithm. **/
   def calculate(s: String, algorithm: String): String = {
-    calcAsString(MessageDigest.getInstance(algorithm).digest(s.getBytes))    
+    convertToHex(MessageDigest.getInstance(algorithm).digest(s.getBytes))    
   }
   
   /** Calculate the MD5 checksum of a file. **/
@@ -31,11 +32,11 @@ object Checksum {
 
   /** Calculate the checksum of a file with the specified algorithm. **/
   def calculate(file: File, algorithm: String): String = {
-    calcAsString(calcAsBytes(file, algorithm))
+    convertToHex(calcAsBytes(file, algorithm))
   }
 
   /** Converting a checksum byte array to a hexadecimal string. **/
-  private def calcAsString(checksumAsBytes: Array[Byte]): String = {
+  private def convertToHex(checksumAsBytes: Array[Byte]): String = {
     val checksum = new StringBuilder()
 
     for (byte <- checksumAsBytes) checksum.append(Integer.toString((byte & 0xff) + 0x100, 16).substring(1))
@@ -44,7 +45,7 @@ object Checksum {
   }
 
   /** 
-   *  Calculate a checksum byte array of the specified file.
+   *  Calculate a checksum hash as a byte array of the specified file.
    *  
    *  @param f is the file to calculate the checksum of
    *  @param algorithm is the algorithm to use
@@ -52,23 +53,25 @@ object Checksum {
    **/
   private def calcAsBytes(f: File, algorithm: String): Array[Byte] = {
     var in: InputStream = null;
-    var complete: MessageDigest = null;
+    var md: MessageDigest = null;
 
     try {
       in = new FileInputStream(f)
       val buffer = new Array[Byte](1024)
       var numRead = -1
 
-      complete = MessageDigest.getInstance(algorithm)
+      md = MessageDigest.getInstance(algorithm)
 
+      // Read the file in parts to ensure we do not get an OutOfMemoryError,
+      // the MessageDigest update method is used to create the checksum
       Stream.continually(in.read(buffer)).takeWhile(_ >= 0) foreach { read =>
-        complete.update(buffer, 0, read);
+        md.update(buffer, 0, read);
       }
     } finally {
-      if (in != null) in.close
+      IOUtils.closeQuietly(in)
     }
 
-    complete.digest()
+    md.digest()
   }
 
 }
