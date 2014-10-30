@@ -8,6 +8,7 @@ import java.net.URL
 import com.nidkil.downloader.utils.UrlUtils
 import org.apache.commons.io.FileUtils
 import com.nidkil.downloader.core.State
+import org.scalatest.Tag
 
 class ChunkDownloadTest extends FunSpec with Matchers {
 
@@ -21,7 +22,7 @@ class ChunkDownloadTest extends FunSpec with Matchers {
   def curDir = new java.io.File(".").getCanonicalPath
   
   describe("A ChunkDownload trait") {
-    it("should provide validate functionality on demand (composable behaviour)") {
+    it("should provide validate functionality on demand (composable behaviour)", Tag("unit")) {
       // Note that the last two parameters of Chunk have default values and
       // therefor do not need to be specified when creating the Chunk
       val chunkDownload = new Chunk(1, url, file, 0, fileSize) with ChunkDownload
@@ -44,7 +45,7 @@ class ChunkDownloadTest extends FunSpec with Matchers {
       assert(stateDownloaded == State.DOWNLOADED)
       file.delete
     }
-    it("should provide convenience methods on demand (composable behaviour)") {
+    it("should provide convenience methods on demand (composable behaviour)", Tag("unit")) {
       val chunkDownload = new Chunk(1, url, file, 0, fileSize) with ChunkDownload
       
       info("return parent directory")
@@ -53,7 +54,7 @@ class ChunkDownloadTest extends FunSpec with Matchers {
       info("return formatted id")
       assert(chunkDownload.formattedId == "000001")      
     }
-    it("should be possible to update the state of a Chunk by making a copy and only updating the state") {
+    it("should be possible to update the state of a Chunk by making a copy and only updating the state", Tag("unit")) {
       val chunkDownload = new Chunk(1, url, file, 0, fileSize) with ChunkDownload
       val updatedChunk = chunkDownload.copy(state = State.COMPLETED)
       assert(chunkDownload.state != updatedChunk.state)
