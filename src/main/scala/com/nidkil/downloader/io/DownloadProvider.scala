@@ -7,12 +7,11 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
-
 import org.apache.commons.io.IOUtils
-
 import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.RemoteFileInfo
 import com.nidkil.downloader.utils.Logging
+import org.apache.commons.io.FileUtils
 
 object DownloadProvider {
   val IO_BUFFER_SIZE = 1 * 1024 * 1024 // 1 MB
@@ -56,6 +55,7 @@ class DownloadProvider extends Logging {
       }
       case f: File if !f.exists => {
         logger.debug(s"Destination file does NOT exists, creating file [destination=${c.destFile.getAbsolutePath}]")
+        FileUtils.forceMkdir(c.destFile.getParentFile)
         c.destFile.createNewFile
       }
     }
