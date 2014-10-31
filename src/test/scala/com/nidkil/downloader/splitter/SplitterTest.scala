@@ -1,17 +1,20 @@
 package com.nidkil.downloader.splitter
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
-import com.nidkil.downloader.datatypes.RemoteFileInfo
-import com.nidkil.downloader.datatypes.Download
-import java.util.zip.Checksum
-import java.net.URL
 import java.io.File
+import java.net.URL
 import java.util.Date
+
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import org.scalatest.Tag
+
 import com.nidkil.downloader.behaviour.ChunkDownload
 import com.nidkil.downloader.datatypes.Chunk
-import com.nidkil.downloader.core.State
-import org.scalatest.Tag
+import com.nidkil.downloader.datatypes.RemoteFileInfo
+import com.nidkil.downloader.manager.State
+
+import Splitter.ratioMaxSizeStrategy
+import Splitter.ratioStrategy
 
 class SplitterTest extends FunSpec with Matchers {
 

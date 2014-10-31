@@ -1,7 +1,8 @@
 package com.nidkil.downloader.behaviour
 
 import java.io.File
-import com.nidkil.downloader.core.State
+
+import com.nidkil.downloader.manager.State
 
 trait ChunkDownload {
   

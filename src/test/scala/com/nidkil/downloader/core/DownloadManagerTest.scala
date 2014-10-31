@@ -9,6 +9,7 @@ import org.scalatest.Tag
 
 import com.nidkil.downloader.cleaner.DefaultCleaner
 import com.nidkil.downloader.datatypes.Download
+import com.nidkil.downloader.manager.DefaultDownloadManager;
 import com.nidkil.downloader.merger.DefaultMerger
 import com.nidkil.downloader.splitter.Splitter
 import com.nidkil.downloader.utils.Checksum

@@ -1,4 +1,4 @@
-package com.nidkil.downloader.core
+package com.nidkil.downloader.manager
 
 object State extends Enumeration {
   type State = Value
