@@ -13,25 +13,29 @@ import java.io.File
 /**
  * The merger handles the merging of chunks.
  * 
- * This is the default merger which uses standard Java io to merge the chunks.
+ * This is the default merger which uses standard io to merge the chunks.
  */
 class DefaultMerger extends Merger {
 
   import Merger._
+  
+  private var _tempFile: File = null
 
+  def tempFile = _tempFile
+  
   def merge(download: Download, chunks: LinkedHashSet[Chunk]): Boolean = {
     require(download != null, "Download cannot be null")
     require(chunks != null, "Chunks cannot be null")
     
-    val tempFile = new File(download.destFile.getParentFile, download.id + MERGED_FILE_EXT)
+    _tempFile = new File(download.destFile.getParentFile, download.id + MERGED_FILE_EXT)
     
-    logger.debug(s"Merge chunks [chunk cnt=${chunks.size}, destination=${tempFile.getPath}]")
+    logger.debug(s"Merge chunks [chunk cnt=${chunks.size}, destination=${_tempFile.getPath}]")
 
     try {
-      if (tempFile.exists) FileUtils.forceDelete(tempFile)
+      if (_tempFile.exists) FileUtils.forceDelete(_tempFile)
     } catch {
       case e: IOException => {
-        val msg = s"An error occurred while deleting temp merge file [temp file=${tempFile.getPath}, message=$e.getMessage}]";
+        val msg = s"An error occurred while deleting temp merge file [temp file=${_tempFile.getPath}, message=$e.getMessage}]";
         throw new MergerException(msg, e)
       }
     }
@@ -40,10 +44,10 @@ class DefaultMerger extends Merger {
     var out: FileOutputStream = null
 
     try {
-      out = FileUtils.openOutputStream(tempFile)
+      out = FileUtils.openOutputStream(_tempFile)
 
       for (chunk <- chunks) {
-        logger.debug(s"Merging chunk [$chunk.toString}, actual size=${chunk.destFile.length}]")
+        logger.debug(s"Merging chunk [$chunk, actual size=${chunk.destFile.length}]")
 
         in = FileUtils.openInputStream(chunk.destFile)
 
