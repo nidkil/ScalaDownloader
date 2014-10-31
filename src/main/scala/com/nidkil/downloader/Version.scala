@@ -2,6 +2,6 @@ package com.nidkil.downloader
 
 object Version {
 
-  def Version = "v0.5.0"
+  def version = "v0.5.1"
   
 }
