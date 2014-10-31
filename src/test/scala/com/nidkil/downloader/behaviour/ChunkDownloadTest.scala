@@ -1,14 +1,16 @@
 package com.nidkil.downloader.behaviour
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import com.nidkil.downloader.datatypes.Chunk
 import java.io.File
 import java.net.URL
-import com.nidkil.downloader.utils.UrlUtils
+
 import org.apache.commons.io.FileUtils
-import com.nidkil.downloader.core.State
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 import org.scalatest.Tag
+
+import com.nidkil.downloader.datatypes.Chunk
+import com.nidkil.downloader.manager.State
+import com.nidkil.downloader.utils.UrlUtils
 
 class ChunkDownloadTest extends FunSpec with Matchers {
 
