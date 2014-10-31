@@ -6,6 +6,7 @@ import java.io.File
 import com.nidkil.downloader.datatypes.Download
 import java.net.URL
 import com.nidkil.downloader.splitter.Splitter
+import org.scalatest.Tag
 
 class DefaultMergerTest extends FunSpec with Matchers {
 
@@ -15,7 +16,7 @@ class DefaultMergerTest extends FunSpec with Matchers {
   def curDir = new java.io.File(".").getCanonicalPath
   
   describe("A DefaultMerger") {
-    it("should merge chunks into a single file") {
+    it("should merge chunks into a single file", Tag("unit")) {
       val f = new File(curDir, "test.file")
       val generateTestChunks = new GenerateTestChunks()
       val download = new Download("TEST", new URL("http://www.test.com"), f, f.getParentFile)
