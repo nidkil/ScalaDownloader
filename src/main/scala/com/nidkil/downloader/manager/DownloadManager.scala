@@ -1,4 +1,4 @@
-package com.nidkil.downloader.core
+package com.nidkil.downloader.manager
 
 import com.nidkil.downloader.cleaner.DefaultCleaner
 import com.nidkil.downloader.datatypes.Download
