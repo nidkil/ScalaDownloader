@@ -1,4 +1,4 @@
-package com.nidkil.downloader.core
+package com.nidkil.downloader.manager
 
 import java.io.File
 import java.net.URL
@@ -9,9 +9,8 @@ import org.scalatest.Tag
 
 import com.nidkil.downloader.cleaner.DefaultCleaner
 import com.nidkil.downloader.datatypes.Download
-import com.nidkil.downloader.manager.DefaultDownloadManager;
 import com.nidkil.downloader.merger.DefaultMerger
-import com.nidkil.downloader.splitter.Splitter
+import com.nidkil.downloader.splitter.DefaultSplitter
 import com.nidkil.downloader.utils.Checksum
 import com.nidkil.downloader.utils.Timer
 import com.nidkil.downloader.utils.UrlUtils
@@ -26,7 +25,7 @@ class DownloadManagerTest extends FunSpec with Matchers {
       
       timer.start
       
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val merger = new DefaultMerger()
       val cleanup = new DefaultCleaner()
       val manager = new DefaultDownloadManager(splitter, merger, cleanup)
@@ -46,7 +45,7 @@ class DownloadManagerTest extends FunSpec with Matchers {
       
       timer.start
       
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val merger = new DefaultMerger()
       val cleanup = new DefaultCleaner()
       val manager = new DefaultDownloadManager(splitter, merger, cleanup)

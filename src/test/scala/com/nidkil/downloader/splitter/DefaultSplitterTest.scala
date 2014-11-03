@@ -13,12 +13,9 @@ import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.RemoteFileInfo
 import com.nidkil.downloader.manager.State
 
-import Splitter.ratioMaxSizeStrategy
-import Splitter.ratioStrategy
+class DefaultSplitterTest extends FunSpec with Matchers {
 
-class SplitterTest extends FunSpec with Matchers {
-
-  import Splitter._
+  import DefaultSplitter._
 
   val url = new URL("http://download.thinkbroadband.com/5MB.zip")
   val destFile = new File("test.dat")
@@ -29,16 +26,16 @@ class SplitterTest extends FunSpec with Matchers {
 
   def curDir = new java.io.File(".").getCanonicalPath
 
-  describe("A Splitter") {
+  describe("A DefaultSplitter") {
     it("should return 1 chunk when the default splitter used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 5, new Date())
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir)
       assert(chunks.size == 1)
     }
     it("should return 5 chunk when the default splitter used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 25, new Date())
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir)
       assert(chunks.size == 5)
       val test = for (c <- chunks) yield 
@@ -49,25 +46,37 @@ class SplitterTest extends FunSpec with Matchers {
     }
     it("should return 10 chunks when the standard ratio strategy is used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 512 * 5, new Date())
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir, ratioStrategy)
       assert(chunks.size == 10)
     }
-    it("should return 20 chunks when the standard ratio with max size strategy is used", Tag("unit")) {
+    it("should return 40 chunks when the standard ratio with max size strategy is used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 400, new Date())
-      val splitter = new Splitter()
-      val chunks = splitter.split(info, true, workDir, ratioMaxSizeStrategy)
-      assert(chunks.size == 20)
+      val splitter = new DefaultSplitter()
+      val chunks = splitter.split(info, true, workDir, ratioMaxStrategy)
+      assert(chunks.size == 40)
+    }
+    it("should return 5 chunks when the standard ratio with min max size strategy is used", Tag("unit")) {
+      val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 5, new Date())
+      val splitter = new DefaultSplitter()
+      val chunks = splitter.split(info, true, workDir, ratioMinMaxStrategy)
+      assert(chunks.size == 5)
+    }
+    it("should return 15 chunks when the standard ratio with min max size strategy is used", Tag("unit")) {
+      val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 150, new Date())
+      val splitter = new DefaultSplitter()
+      val chunks = splitter.split(info, true, workDir, ratioMinMaxStrategy)
+      assert(chunks.size == 15)
     }
     it("should return 4 chunks when a custom ratio splitter is used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 5, new Date())
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir, customStrategy)
       assert(chunks.size == 4)
     }
     it("should return 4 chunks when a custom ratio splitter is used, last chunk should be smaller than 1 MB", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, (1024 * 1024 * 4) - 512, new Date())
-      val splitter = new Splitter()
+      val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir, customStrategy1mb)
       assert(chunks.size == 4)
       assert(chunks.last.length < 1024 * 1024 * 1)
