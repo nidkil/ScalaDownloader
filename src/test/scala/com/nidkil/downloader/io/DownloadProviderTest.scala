@@ -74,17 +74,21 @@ class DownloadProviderTest extends FunSpec with Matchers {
       val provider = new DownloadProvider()
 
       try {
-        val url = new URL("http://apache.proserve.nl/tomcat/tomcat-7/v7.0.56/bin/apache-tomcat-7.0.56.zip")
+        val url = new URL("http://download.thinkbroadband.com/5MB.zip")
         val file = new File(workDir, UrlUtils.extractFilename(url))
         val rfi = provider.remoteFileInfo(url)
         val chunk = new Chunk(1, url, file, 0, rfi.fileSize.toInt)
+        
+        // Make sure the destination file does not exist
+        if(file.exists) file.delete
+
         provider.download(chunk)
 
         info("the content length must match the file length")
         assert(file.length == rfi.fileSize)
 
         info("the MD5 checksum of the downloaded file must match the MD5 checksum on the website")
-        assert(Checksum.calculate(file) == "2bc8949a9c2ac44c5787b9ed4cfd3d0d")
+        assert(Checksum.calculate(file) == "b3215c06647bc550406a9c8ccc378756")
 
         file.delete
       } finally {

@@ -26,7 +26,7 @@ class ChecksumValidator(val check: String) extends Validator with Logging {
     require(f != null, "File cannot be null")
     require(f.exists == true, "File must exist")
     
-    logger.debug(s"Validating checksum [file=${f.getAbsolutePath}, checksum=$check}]")
+    logger.debug(s"Validating checksum [file=${f.getAbsolutePath}, checksum=$check]")
     
     if(Checksum.calculate(f) == check) true
     else false
