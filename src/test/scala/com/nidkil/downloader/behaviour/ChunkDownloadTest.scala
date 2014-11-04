@@ -2,15 +2,14 @@ package com.nidkil.downloader.behaviour
 
 import java.io.File
 import java.net.URL
-
 import org.apache.commons.io.FileUtils
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.Tag
-
 import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.manager.State
 import com.nidkil.downloader.utils.UrlUtils
+import com.nidkil.downloader.merger.GenerateTestFile
 
 class ChunkDownloadTest extends FunSpec with Matchers {
 
@@ -36,15 +35,23 @@ class ChunkDownloadTest extends FunSpec with Matchers {
       val statePending = chunkDownload.validateState(file, fileSize)
       assert(statePending == State.PENDING)
 
-      info("returns DOWNLOADING if the file exists, but does not have the specified length")
-      file.createNewFile
-      val stateDownloading = chunkDownload.validateState(file, fileSize)
-      assert(stateDownloading == State.DOWNLOADING)
-
       info("returns DOWNLOADED if the file exists, but does not have the specified length")
+      file.createNewFile
       val zeroChunkDownload = new Chunk(1, url, file, -1, 0) with ChunkDownload
       val stateDownloaded = zeroChunkDownload.validateState(file, 0)
       assert(stateDownloaded == State.DOWNLOADED)
+
+      info("returns DOWNLOADING if the file exists, but does not have the specified length")
+      file.delete
+      val generateTestFile = new GenerateTestFile()
+      generateTestFile.generateFile(file, fileSize)
+      val stateDownloading = chunkDownload.validateState(file, fileSize * 2)
+      assert(stateDownloading == State.DOWNLOADING)
+
+      info("returns ERROR if the file exists, but the length is greater than the expected length")
+      val stateError = chunkDownload.validateState(file, 1)
+      assert(stateError == State.ERROR)
+      
       file.delete
     }
     it("should provide convenience methods on demand (composable behaviour)", Tag("unit")) {
