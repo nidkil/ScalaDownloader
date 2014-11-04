@@ -25,19 +25,19 @@ class DownloadProvider extends Logging {
   import DownloadProvider._
 
   private var driver: ProtocolDriver = null
-  
+
   def remoteFileInfo(u: URL): RemoteFileInfo = {
     val driver = ProtocolDriverFactory.loadDriver(u.getProtocol)
     driver.remoteFileInfo(u)
   }
-  
+
   def download(c: Chunk): Boolean = {
     require(c.url != null, s"Url cannot be null")
     require(c.offset >= 0, s"Offset cannot be negative [offset=${c.offset}]")
     require(c.length > 0, s"Length must be larger than zero [length=${c.length}]")
 
     driver = ProtocolDriverFactory.loadDriver(c.url.getProtocol)
-    
+
     val connection = driver.connection(c)
 
     if (!driver.statusOk) {
@@ -47,10 +47,20 @@ class DownloadProvider extends Logging {
 
     c.destFile match {
       case f: File if f.exists => c.append match {
-        case true => logger.debug(s"Destination file exists, resuming download [append=${c.append}, destination=${c.destFile.getAbsolutePath}]")
+        case true => f.length match {
+          case x: Long if x == c.length => {
+            logger.debug(s"Destination file exists and is complete, skipping download [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
+            return false
+          }
+          case x: Long if x < c.length => logger.debug(s"Destination file exists and is not complete, resuming download [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
+          case x: Long if x > c.length => {
+            logger.debug(s"Destination file exists and is largr than expected size, deleting file [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
+            FileUtils.forceDelete(f)
+          }
+        }
         case false => {
           logger.debug(s"Destination file exists, deleting file [append=${c.append}, destination=${c.destFile.getAbsolutePath}]")
-          f.delete
+          FileUtils.forceDelete(f)
         }
       }
       case f: File if !f.exists => {
