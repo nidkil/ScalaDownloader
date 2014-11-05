@@ -1,18 +1,19 @@
 package com.nidkil.downloader.io
 
 import java.io.BufferedInputStream
-import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
+
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
+
 import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.RemoteFileInfo
-import com.nidkil.downloader.utils.Logging
-import org.apache.commons.io.FileUtils
 import com.nidkil.downloader.manager.State
+import com.nidkil.downloader.utils.Logging
 
 object DownloadProvider {
   val IO_BUFFER_SIZE = 1 * 1024 * 1024 // 1 MB
@@ -71,22 +72,22 @@ class DownloadProvider extends Logging {
     var continue = true
     c.state match {
       case State.DOWNLOADED | State.DOWNLOADING if c.append == false => {
-        logger.debug(s"Destination file exists append is disabled, deleting file [${c.destFile.getAbsolutePath}]")
+        logger.debug(s"Destination file exists append is disabled, deleting file [destFile=${c.destFile.getAbsolutePath}, actual=${c.destFile.length}]")
         FileUtils.forceDelete(c.destFile)
       }
       case State.DOWNLOADED => {
-        logger.debug(s"Destination file exists and is complete, skipping download [${c.destFile.getAbsolutePath}]")
+        logger.debug(s"Destination file exists and is complete, skipping download [destFile=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${c.destFile.length}]")
         continue = false
       }
       case State.DOWNLOADING => {
-        logger.debug(s"Destination file exists and is not complete, resuming download [${c.destFile.getAbsolutePath}]")
+        logger.debug(s"Destination file exists and is not complete, resuming download [destFile=${c.destFile.getAbsolutePath}]")
       }
       case State.ERROR => {
-        logger.debug(s"Destination file exists and is larger than expected size, deleting file [${c.destFile.getAbsolutePath}]")
+        logger.debug(s"Destination file exists and is larger than expected size, deleting file [destFile=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${c.destFile.length}]")
         FileUtils.forceDelete(c.destFile)
       }
       case State.PENDING => {
-        logger.debug(s"Destination file does NOT exists, creating file [${c.destFile.getAbsolutePath}]")
+        logger.debug(s"Destination file does NOT exists, creating file [destFile=${c.destFile.getAbsolutePath}]")
         c.destFile.createNewFile
       }
       case _ => throw new DownloadException(s"Unknown chunk state [$c]")

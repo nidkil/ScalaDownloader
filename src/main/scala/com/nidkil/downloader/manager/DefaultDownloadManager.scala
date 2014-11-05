@@ -1,20 +1,22 @@
 package com.nidkil.downloader.manager
 
 import java.io.File
+import java.io.PrintWriter
+
+import scala.collection.mutable.LinkedHashSet
+
+import org.apache.commons.io.FileUtils
+
 import com.nidkil.downloader.cleaner.DefaultCleaner
+import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.Download
+import com.nidkil.downloader.datatypes.RemoteFileInfo
 import com.nidkil.downloader.io.DownloadProvider
 import com.nidkil.downloader.merger.Merger
 import com.nidkil.downloader.splitter.Splitter
 import com.nidkil.downloader.utils.Logging
 import com.nidkil.downloader.validator.ChecksumValidator
 import com.nidkil.downloader.validator.FileSizeValidator
-import com.nidkil.downloader.validator.Validator
-import org.apache.commons.io.FileUtils
-import java.io.PrintWriter
-import com.nidkil.downloader.datatypes.RemoteFileInfo
-import scala.collection.mutable.LinkedHashSet
-import com.nidkil.downloader.datatypes.Chunk
 
 class DefaultDownloadManager(splitter: Splitter, merger: Merger, cleaner: DefaultCleaner) extends DownloadManager(splitter, merger, cleaner) with Logging {
 
@@ -34,17 +36,30 @@ class DefaultDownloadManager(splitter: Splitter, merger: Merger, cleaner: Defaul
     }
   }
 
-  def execute(d: Download) = {
+  def execute(d: Download, strategy: (Long) => Int = Splitter.defaultStrategy) = {
     download = d
     
-    val provider = new DownloadProvider()
-    
-    remoteFileInfo = provider.remoteFileInfo(d.url)
-    chunks = splitter.split(remoteFileInfo, d.append, d.workDir)
+    val p = new DownloadProvider()
+    try {
+      remoteFileInfo = p.remoteFileInfo(d.url)
+    } finally {
+      p.close
+    }
+      
+    chunks = splitter.split(remoteFileInfo, d.append, d.workDir, strategy)
 
     writeDebugInfo
     
-    for (c <- chunks) provider.download(c)
+    for (c <- chunks.par) {
+      // Need to create separate DownloadProviders for each chunk, otherwise 
+      // download threads get mixed up 
+      val p = new DownloadProvider()
+      try {
+        p.download(c)
+      } finally {
+        p.close
+      }
+    }
 
     merger.merge(d, chunks)
 

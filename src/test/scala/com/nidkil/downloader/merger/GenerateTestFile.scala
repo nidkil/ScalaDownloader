@@ -56,6 +56,8 @@ class GenerateTestFile {
   private def writeFile(f: File, data: Array[Byte]) = {
     var out: FileOutputStream = null
 
+    FileUtils.forceMkdir(f.getParentFile)
+
     try {
       out = FileUtils.openOutputStream(f)
       out.write(data)

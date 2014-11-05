@@ -2,6 +2,7 @@ package com.nidkil.downloader.datatypes
 
 import java.io.File
 import java.net.URL
+import com.nidkil.downloader.DownloaderException
 import com.nidkil.downloader.manager.State
 import State._
 import scala.collection.mutable.LinkedHashSet
@@ -45,7 +46,11 @@ object Chunk {
 
   /** Updates the state of the specified chunk with the specifed state. */
   def updateState(c: Chunk, s: State): Chunk = {
-    c.copy(state = s)
+    s match {
+      case State.DOWNLOADING => c.copy(offset = c.offset + c.destFile.length, state = s)
+      case State.DOWNLOADED | State.ERROR | State.PENDING => c.copy(state = s)
+      case _ => throw new DownloaderException(s"Unknown state [$c]")
+    }
   }
 
   /** Determines the state of a chunk by checking the destination file. */
