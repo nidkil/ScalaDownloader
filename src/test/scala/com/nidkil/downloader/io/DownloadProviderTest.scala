@@ -9,6 +9,7 @@ import com.nidkil.downloader.utils.Checksum
 import com.nidkil.downloader.utils.Timer
 import com.nidkil.downloader.utils.UrlUtils
 import org.scalatest.Tag
+import com.nidkil.downloader.manager.State
 
 class DownloadProviderTest extends FunSpec with Matchers {
 
@@ -68,6 +69,19 @@ class DownloadProviderTest extends FunSpec with Matchers {
         }
       }
     }
+    it("should throw an exception if state is unknown") {
+      intercept[DownloadException] {
+        val provider = new DownloadProvider()
+        try {
+          val url = new URL("http://download.thinkbroadband.com/5MB.zip_does_not_exist")
+          val file = new File(workDir, UrlUtils.extractFilename(url))
+          val chunk = new Chunk(1, url, file, 0, 1000)
+          provider.download(chunk)
+        } finally {
+          provider.close
+        }
+      }
+    }
     it("should download the file") {
       timer.start
 
@@ -77,7 +91,7 @@ class DownloadProviderTest extends FunSpec with Matchers {
         val url = new URL("http://download.thinkbroadband.com/5MB.zip")
         val file = new File(workDir, UrlUtils.extractFilename(url))
         val rfi = provider.remoteFileInfo(url)
-        val chunk = new Chunk(1, url, file, 0, rfi.fileSize.toInt)
+        val chunk = new Chunk(1, url, file, 0, rfi.fileSize.toInt, true, State.PENDING)
         
         // Make sure the destination file does not exist
         if(file.exists) file.delete
