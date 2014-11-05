@@ -52,6 +52,7 @@ class DefaultSplitter extends Splitter {
 
   import DefaultSplitter._
   import Splitter._
+  import Chunk._
 
   /**
    * This method handles the actual generation of chunks.
@@ -71,7 +72,7 @@ class DefaultSplitter extends Splitter {
 
     def addChunk(i: Int, startChunk: Long, endChunk: Long, length: Int) = {
       val destFile = new File(workDir, f"$i%06d$CHUNK_FILE_EXT")
-      chunks += new Chunk(i, r.url, destFile, startChunk, length, append)
+      chunks += Chunk.createChunk(i, r.url, destFile, startChunk, length, append)
     }
 
     @tailrec def createChunk(i: Int, startChunk: Long): LinkedHashSet[Chunk] = i match {
