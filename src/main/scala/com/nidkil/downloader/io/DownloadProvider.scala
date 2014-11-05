@@ -1,17 +1,19 @@
 package com.nidkil.downloader.io
 
 import java.io.BufferedInputStream
-import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
+
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
+
 import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.RemoteFileInfo
+import com.nidkil.downloader.manager.State
 import com.nidkil.downloader.utils.Logging
-import org.apache.commons.io.FileUtils
 
 object DownloadProvider {
   val IO_BUFFER_SIZE = 1 * 1024 * 1024 // 1 MB
@@ -31,7 +33,7 @@ class DownloadProvider extends Logging {
     driver.remoteFileInfo(u)
   }
 
-  def download(c: Chunk): Boolean = {
+  def download(c: Chunk): Unit = {
     require(c.url != null, s"Url cannot be null")
     require(c.offset >= 0, s"Offset cannot be negative [offset=${c.offset}]")
     require(c.length > 0, s"Length must be larger than zero [length=${c.length}]")
@@ -45,52 +47,52 @@ class DownloadProvider extends Logging {
       throw new DownloadException(message)
     }
 
-    c.destFile match {
-      case f: File if f.exists => c.append match {
-        case true => f.length match {
-          case x: Long if x == c.length => {
-            logger.debug(s"Destination file exists and is complete, skipping download [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
-            return false
-          }
-          case x: Long if x < c.length => logger.debug(s"Destination file exists and is not complete, resuming download [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
-          case x: Long if x > c.length => {
-            logger.debug(s"Destination file exists and is largr than expected size, deleting file [destination=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${f.length}]")
-            FileUtils.forceDelete(f)
-          }
-        }
-        case false => {
-          logger.debug(s"Destination file exists, deleting file [append=${c.append}, destination=${c.destFile.getAbsolutePath}]")
-          FileUtils.forceDelete(f)
-        }
+    if (prestart(c)) {
+      var in: InputStream = null
+      var out: OutputStream = null
+
+      try {
+        in = new BufferedInputStream(driver.inputstream)
+        out = new FileOutputStream(c.destFile, c.append)
+
+        save(in, out)
+
+        out.flush()
+      } catch {
+        case e: IOException =>
+          throw new DownloadException("IO error occurred, could not download file", e)
+      } finally {
+        IOUtils.closeQuietly(in)
+        IOUtils.closeQuietly(out)
       }
-      case f: File if !f.exists => {
-        logger.debug(s"Destination file does NOT exists, creating file [destination=${c.destFile.getAbsolutePath}]")
-        FileUtils.forceMkdir(c.destFile.getParentFile)
+    }
+  }
+
+  def prestart(c: Chunk): Boolean = {
+    var continue = true
+    c.state match {
+      case State.DOWNLOADED | State.DOWNLOADING if c.append == false => {
+        logger.debug(s"Destination file exists append is disabled, deleting file [destFile=${c.destFile.getAbsolutePath}, actual=${c.destFile.length}]")
+        FileUtils.forceDelete(c.destFile)
+      }
+      case State.DOWNLOADED => {
+        logger.debug(s"Destination file exists and is complete, skipping download [destFile=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${c.destFile.length}]")
+        continue = false
+      }
+      case State.DOWNLOADING => {
+        logger.debug(s"Destination file exists and is not complete, resuming download [destFile=${c.destFile.getAbsolutePath}]")
+      }
+      case State.ERROR => {
+        logger.debug(s"Destination file exists and is larger than expected size, deleting file [destFile=${c.destFile.getAbsolutePath}, expected=${c.length}, actual=${c.destFile.length}]")
+        FileUtils.forceDelete(c.destFile)
+      }
+      case State.PENDING => {
+        logger.debug(s"Destination file does NOT exists, creating file [destFile=${c.destFile.getAbsolutePath}]")
         c.destFile.createNewFile
       }
+      case _ => throw new DownloadException(s"Unknown chunk state [$c]")
     }
-
-    var in: InputStream = null
-    var out: OutputStream = null
-
-    try {
-      in = new BufferedInputStream(driver.inputstream)
-      out = new FileOutputStream(c.destFile, c.append)
-
-      save(in, out)
-
-      out.flush()
-
-      true
-    } catch {
-      case e: IOException =>
-        throw new DownloadException("IO error occurred, could not download file", e)
-
-        false
-    } finally {
-      IOUtils.closeQuietly(in)
-      IOUtils.closeQuietly(out)
-    }
+    continue
   }
 
   def close: Unit = {

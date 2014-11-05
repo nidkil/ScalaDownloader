@@ -3,30 +3,37 @@ package com.nidkil.downloader.splitter
 import java.io.File
 import java.net.URL
 import java.util.Date
-
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.Tag
-
-import com.nidkil.downloader.behaviour.ChunkDownload
-import com.nidkil.downloader.datatypes.Chunk
+import com.nidkil.downloader.datatypes.Download
 import com.nidkil.downloader.datatypes.RemoteFileInfo
 import com.nidkil.downloader.manager.State
+import com.nidkil.downloader.merger.GenerateTestFile
+import DefaultSplitter.ratioMaxStrategy
+import DefaultSplitter.ratioMinMaxStrategy
+import DefaultSplitter.ratioStrategy
+import com.nidkil.downloader.datatypes.Chunk
+import com.nidkil.downloader.merger.Merger
 
 class DefaultSplitterTest extends FunSpec with Matchers {
 
+  import Chunk._
   import DefaultSplitter._
-
-  val url = new URL("http://download.thinkbroadband.com/5MB.zip")
-  val destFile = new File("test.dat")
-  val workDir = new File(curDir, "download/work")
+  import Merger._
 
   def customStrategy(fileSize: Long): Int = ((fileSize - (fileSize % 4)) / 4).toInt
+
   def customStrategy1mb(fileSize: Long): Int = 1024 * 1024 * 1 // 1 MB
 
   def curDir = new java.io.File(".").getCanonicalPath
 
   describe("A DefaultSplitter") {
+    val size1mb = 1024 * 1024 * 1
+    val url = new URL("http://download.thinkbroadband.com/5MB.zip")
+    val destFile = new File("test.dat")
+    val workDir = new File(curDir, "download/work")
+
     it("should return 1 chunk when the default splitter used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 1024 * 5, new Date())
       val splitter = new DefaultSplitter()
@@ -38,11 +45,6 @@ class DefaultSplitterTest extends FunSpec with Matchers {
       val splitter = new DefaultSplitter()
       val chunks = splitter.split(info, true, workDir)
       assert(chunks.size == 5)
-      val test = for (c <- chunks) yield 
-        (new Chunk(c.id, c.url, c.destFile, c.offset, c.length) with ChunkDownload {
-          override val state = State.CANCELLED
-        })
-      for(t <- test) println(s" - ${t.formattedId}, ${t.workDir} $t")
     }
     it("should return 10 chunks when the standard ratio strategy is used", Tag("unit")) {
       val info = new RemoteFileInfo(url, "application/x-compressed", true, 1024 * 512 * 5, new Date())
@@ -80,6 +82,40 @@ class DefaultSplitterTest extends FunSpec with Matchers {
       val chunks = splitter.split(info, true, workDir, customStrategy1mb)
       assert(chunks.size == 4)
       assert(chunks.last.length < 1024 * 1024 * 1)
+    }
+    it("should initialize the state of the chunks", Tag("unit")) {
+      val f = new File(workDir, "test.file")
+      val generateTestChunks = new GenerateTestFile()
+      val download = new Download("TEST", new URL("http://www.test.com"), f, f.getParentFile)
+      // Chunk states: 1 = Pending, 2 = Downloaded, 3 = Downloading, 4 = Downloaded, 5 = Error
+      val chunkSizes = Seq(size1mb, size1mb, size1mb / 2, size1mb, size1mb * 2)
+      val chunks = generateTestChunks.generateChunks(workDir, chunkSizes)
+      chunks.find(_.id == 1).get.destFile.delete
+
+      val rfi = new RemoteFileInfo(url, "application/x-compressed", true, size1mb * 5, new Date())
+      val splitter = new DefaultSplitter()
+      val chunks2 = splitter.split(rfi, true, workDir, customStrategy1mb)
+
+      val states = Seq(State.PENDING, State.DOWNLOADED, State.DOWNLOADING, State.DOWNLOADED, State.ERROR)
+
+      info("state of chunks should be initialized correctly")
+      for (chunk <- chunks2; state = states lift (chunk.id - 1))
+        assert(chunk.state == state.getOrElse(State.NONE))
+
+      def calcOffset(id: Int): Int = (id - 1) * size1mb
+
+      info("offset of chunks with status DOWNLOADING should corrected with the size that has already been downloaded")
+      for (chunk <- chunks2; state = states lift (chunk.id - 1)) {
+        chunk.state match {
+          case State.DOWNLOADED | State.ERROR | State.PENDING => assert(chunk.offset == calcOffset(chunk.id))
+          case State.DOWNLOADING => assert(chunk.offset == calcOffset(chunk.id) + chunk.destFile.length)
+        }
+      }
+
+      // Cleanup
+      val listOfFiles = f.getParentFile.listFiles
+      val matches = for (f <- listOfFiles if f.getName().endsWith(Splitter.CHUNK_FILE_EXT)) yield f
+      for (f <- matches) f.delete
     }
   }
 

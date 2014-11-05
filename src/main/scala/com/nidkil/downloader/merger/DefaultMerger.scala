@@ -27,7 +27,7 @@ class DefaultMerger extends Merger {
     require(download != null, "Download cannot be null")
     require(chunks != null, "Chunks cannot be null")
     
-    _tempFile = new File(download.destFile.getParentFile, download.id + MERGED_FILE_EXT)
+    _tempFile = new File(download.workDir, download.id + MERGED_FILE_EXT)
     
     logger.debug(s"Merge chunks [chunk cnt=${chunks.size}, destination=${_tempFile.getPath}]")
 

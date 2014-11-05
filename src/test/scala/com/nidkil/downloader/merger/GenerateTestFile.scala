@@ -14,23 +14,35 @@ class GenerateTestFile {
 
   import Splitter._
 
-  def generateChunks(f: File, size: Long, numChunks: Int, chunkSize: Int): LinkedHashSet[Chunk] = {
+  def generateChunks(f: File, chunkSizes: Seq[Int]): LinkedHashSet[Chunk] = {
     val chunks = LinkedHashSet[Chunk]()
     val random = new Random(System.currentTimeMillis())
-    val data = new Array[Byte](chunkSize)
-
-    for (i <- 1 to numChunks) {
-      val chunkFile = new File(f.getParentFile, f.getName + f"-$i%06d$CHUNK_FILE_EXT")
-      val startChunk = (i - 1) * chunkSize
+    var prevOffset = 0
+    
+    for (i <- 1 to chunkSizes.size) {
+      val chunkFile = new File(f, f"$i%06d$CHUNK_FILE_EXT")
+      val chunkSize = chunkSizes(i - 1)
+      val offset = prevOffset
+      val data = new Array[Byte](chunkSize)
+      
+      prevOffset = offset + chunkSize
 
       random.nextBytes(data)
 
       writeFile(chunkFile, data)
 
-      chunks += new Chunk(i, new URL("http://www.test.com"), chunkFile, startChunk, chunkSize)
+      chunks += new Chunk(i, new URL("http://www.test.com"), chunkFile, offset, chunkSize)
     }
 
-    chunks
+    chunks  
+  }
+  
+  def generateChunks(f: File, numChunks: Int, chunkSize: Int): LinkedHashSet[Chunk] = {
+    def gen(cnt: Int, c: Seq[Int]): Seq[Int] = cnt match {
+      case _ if cnt == numChunks => c :+ chunkSize
+      case _ => gen(cnt + 1, c :+ chunkSize)
+    }
+    generateChunks(f, gen(1, Seq()))
   }
 
   def generateFile(f: File, size: Int) = {
@@ -43,6 +55,8 @@ class GenerateTestFile {
 
   private def writeFile(f: File, data: Array[Byte]) = {
     var out: FileOutputStream = null
+
+    FileUtils.forceMkdir(f.getParentFile)
 
     try {
       out = FileUtils.openOutputStream(f)

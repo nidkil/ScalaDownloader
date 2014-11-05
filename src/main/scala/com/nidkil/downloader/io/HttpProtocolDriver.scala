@@ -10,6 +10,7 @@ import org.apache.http.impl.client.HttpClientBuilder
 import com.nidkil.downloader.datatypes.Chunk
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.client.methods.CloseableHttpResponse
+import com.nidkil.downloader.manager.State
 
 object HttpProtocolDriver {
   val PROTOCOL = "http"
@@ -31,8 +32,10 @@ class HttpProtocolDriver extends ProtocolDriver with Logging {
 
   protected def response(c: Chunk): CloseableHttpResponse = {
     val httpGet = new HttpGet(c.url.toURI)
-    
-    httpGet.addHeader("range", s"bytes=${c.offset}-${c.offset + c.length - 1}")
+    val range = s"bytes=${c.offset}-${c.offset + c.length - 1}"
+
+    logger.debug(s"range $range, chunk=$c")
+    httpGet.addHeader("range", range)
 
     val response = try {
       httpClient.execute(httpGet)
