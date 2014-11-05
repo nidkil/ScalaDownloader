@@ -7,6 +7,6 @@ import com.nidkil.downloader.splitter.Splitter
 
 abstract class DownloadManager(splitter: Splitter, merger: Merger, cleaner: Cleaner) {
 
-  def execute(d: Download)
+  def execute(d: Download, strategy: (Long) => Int = Splitter.defaultStrategy)
 
 }
