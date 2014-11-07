@@ -2,11 +2,8 @@ package com.nidkil.downloader.manager
 
 import java.io.File
 import java.io.PrintWriter
-
 import scala.collection.mutable.LinkedHashSet
-
 import org.apache.commons.io.FileUtils
-
 import com.nidkil.downloader.cleaner.DefaultCleaner
 import com.nidkil.downloader.datatypes.Chunk
 import com.nidkil.downloader.datatypes.Download
@@ -17,38 +14,22 @@ import com.nidkil.downloader.splitter.Splitter
 import com.nidkil.downloader.utils.Logging
 import com.nidkil.downloader.validator.ChecksumValidator
 import com.nidkil.downloader.validator.FileSizeValidator
+import com.nidkil.downloader.utils.DownloaderUtils
 
 class DefaultDownloadManager(splitter: Splitter, merger: Merger, cleaner: DefaultCleaner) extends DownloadManager(splitter, merger, cleaner) with Logging {
 
-  private var download: Download = null
-  private var chunks: LinkedHashSet[Chunk] = null
-  private var remoteFileInfo: RemoteFileInfo = null
-  
-  def writeDebugInfo(): Unit = {
-    if (!download.workDir.exists) FileUtils.forceMkdir(download.workDir)
-    val out = new PrintWriter(new File(download.workDir, "debug.info"), "UTF-8")
-    try {
-      out.println(download)
-      out.println(remoteFileInfo)
-      out.println(chunks)
-    } finally {
-      out.close
-    }
-  }
-
   def execute(d: Download, strategy: (Long) => Int = Splitter.defaultStrategy) = {
-    download = d
-    
     val p = new DownloadProvider()
-    try {
-      remoteFileInfo = p.remoteFileInfo(d.url)
+    val remoteFileInfo = try {
+      p.remoteFileInfo(d.url)
     } finally {
       p.close
     }
-      
-    chunks = splitter.split(remoteFileInfo, d.append, d.workDir, strategy)
+    val chunks = splitter.split(remoteFileInfo, d.resumeDownload, d.workDir, strategy)
 
-    writeDebugInfo
+    DownloaderUtils.writeDebugInfo(d, chunks, remoteFileInfo)
+    
+    if(d.destFile.exists && d.forceDownload) FileUtils.forceDelete(d.destFile)
     
     for (c <- chunks.par) {
       // Need to create separate DownloadProviders for each chunk, otherwise 
