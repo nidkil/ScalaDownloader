@@ -88,6 +88,7 @@ class DownloadProvider extends Logging {
       }
       case State.PENDING => {
         logger.debug(s"Destination file does NOT exists, creating file [destFile=${c.destFile.getAbsolutePath}]")
+        if(!c.destFile.getParentFile.exists) FileUtils.forceMkdir(c.destFile.getParentFile)
         c.destFile.createNewFile
       }
       case _ => throw new DownloadException(s"Unknown chunk state [$c]")
