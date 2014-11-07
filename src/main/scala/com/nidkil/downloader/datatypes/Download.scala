@@ -7,4 +7,4 @@ import com.nidkil.downloader.manager.State
 
 import State._
 
-case class Download(id: String, url: URL, destFile: File, workDir: File, checksum: String = null, append: Boolean = true, state: State = State.NONE)
+case class Download(id: String, url: URL, destFile: File, workDir: File, checksum: String = null, forceDownload: Boolean = true, resumeDownload: Boolean = true, state: State = State.NONE)
