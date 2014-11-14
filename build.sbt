@@ -1,3 +1,12 @@
+import com.banno.license.Plugin.LicenseKeys._
+import com.banno.license.Licenses._
+
+licenseSettings
+
+license := apache2("Copyright 2014 nidkil")
+
+removeExistingHeaderBlock := true
+ 
 name := "ScalaDownloader"
 
 organization := "nidkil.com"
