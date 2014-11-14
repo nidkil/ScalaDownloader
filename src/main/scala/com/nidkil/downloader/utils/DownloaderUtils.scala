@@ -13,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.nidkil.downloader.merger
+package com.nidkil.downloader.utils
 
-import com.nidkil.downloader.utils.Logging
+import com.nidkil.downloader.datatypes.RemoteFileInfo
+import org.apache.commons.io.FileUtils
+import java.io.PrintWriter
 import com.nidkil.downloader.datatypes.Download
 import scala.collection.mutable.LinkedHashSet
-import com.nidkil.downloader.datatypes.Chunk
 import java.io.File
+import com.nidkil.downloader.datatypes.Chunk
 
-object Merger {
-  val MERGED_FILE_EXT = ".merged"
-}
+object DownloaderUtils {
 
-trait Merger extends Logging {
+  def writeDebugInfo(download: Download, chunks: LinkedHashSet[Chunk], remoteFileInfo: RemoteFileInfo): Unit = {
+    if (!download.workDir.exists) FileUtils.forceMkdir(download.workDir)
+    val out = new PrintWriter(new File(download.workDir, "debug.info"), "UTF-8")
+    try {
+      out.println(download)
+      out.println(remoteFileInfo)
+      out.println(chunks)
+    } finally {
+      out.close
+    }
+  }
 
-  def tempFile: File
-  
-  def merge(download: Download, chunks: LinkedHashSet[Chunk]): Boolean
-  
 }
